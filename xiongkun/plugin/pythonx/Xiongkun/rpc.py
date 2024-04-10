@@ -83,13 +83,19 @@ class RPCChannel:
             os.killpg(self.local_server.pid, signal.SIGKILL)
             
     def __init__(self, name, remote_server, type, function, noblock=0):
+        config = {
+            'mode': 'nl',
+            'callback': f'{name}Server',
+            'noblock': noblock,
+            'waittime': -1,
+        }
         if remote_server is None: 
             port = RPCChannel.local_port
             remote_server = f"127.0.0.1:{port}"
             if not RPCChannel.is_init: 
                 start_server_cmd = f"python3 {HOME_PREFIX}/xkvim/xiongkun/plugin/pythonx/Xiongkun/rpc_server/tcp_server.py --host 127.0.0.1 --port {port} 1>{RPCChannel.rpc_log} 2>&1"
                 self.local_server = subprocess.Popen([start_server_cmd], shell=True, universal_newlines=False, close_fds=True, preexec_fn=os.setsid)
-                #print (f"log path: {RPCChannel.rpc_log}")
+                config['waittime'] = 1000
                 RPCChannel.is_init = True
 
         self.channel_name = f"g:{name}_channel"
@@ -97,18 +103,14 @@ class RPCChannel:
         self.name = name
         self.func_name = function
         create_rpc_handle(name, self.func_name, self.receive_name)
-        config = {
-            'mode': 'nl',
-            'callback': f'{name}Server',
-            'drop': 'auto',
-            'noblock': noblock,
-            'waittime': 3000,
-        }
         self.job_name = remote_server
         vimcommand(
             f'let {self.channel_name} = ch_open("{self.job_name}", {dict2str(config)})'
         )
-        time.sleep(0.1)
+        status = vimeval(f'ch_status({self.channel_name})')
+        if status != "open": 
+            print ("Failed to connect to server.")
+            vimcommand(f'ch_close({self.channel_name})')
 
         vimcommand(
             f'call ch_sendraw({self.channel_name}, "{type}\n")'

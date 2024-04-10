@@ -9,7 +9,7 @@ DEBUG = 1
 NONE = 100
 level = DEBUG 
 def log(*args): # 0 
-    if level > 0: return
+    #if level > 0: return 
     with mutex:
         out = " ".join([a.__str__() for a in args])
         with open(f"{HOME_PREFIX}/vim_log.txt", "a") as fp :

@@ -128,7 +128,7 @@ inoremap <M-u> <Cmd>py3 Xiongkun.windows.GlobalPreviewWindow.open_in_preview_win
 vnoremap // y/\V<C-R>=escape(@",'/\')<CR><CR>
 nnoremap <expr> gp '`[' . strpart(getregtype(), 0, 1) . '`]'
 """ copy the visual into a tempname file. to view a part of a file
-vnoremap \S  y:let tmp=&filetype<cr>:tabe <C-R>=tempname()<cr><cr>P:set filetype=tmp<cr>:set buftype=nofile<cr>:set foldcolumn=0<cr>:set signcolumn=no<cr>
+vnoremap \S  y:let tmp=&filetype<cr>:tabe <C-R>=tempname()<cr><cr>P:set filetype=tmp<cr>:set buftype=nofile<cr>:setlocal foldcolumn=0<cr>:setlocal signcolumn=no<cr>
 "vnoremap K :!dict <C-R>=expand("<cword>")<cr><cr>
 "
 
