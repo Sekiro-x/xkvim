@@ -84,6 +84,8 @@ def fuzzy_match(search_text, candidate):
     def filt(filepath): 
         basename = os.path.basename(filepath).lower()
         filepath = filepath.lower()
+        # speed of fuzzyfind is limited by len(filepath), speed up from 20s -> 1s
+        if (len(filepath) > 100): return False
         for qual in qualifier: 
             if qual.startswith("+") and not re.search(qual[1:], filepath): return False
             if qual.startswith("-") and re.search(qual[1:], filepath): return False
