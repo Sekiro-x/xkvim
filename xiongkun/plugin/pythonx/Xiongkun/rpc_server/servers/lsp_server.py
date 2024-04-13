@@ -202,7 +202,7 @@ class LSPProxy:
         self.check_disable(filepath)
         if not self.file_exist(filepath): 
             self.add_document(-1, filepath)
-        """ definition | implementation
+        """ definition | implementation | reference
         """
         json = {
             "jsonrpc": "2.0",

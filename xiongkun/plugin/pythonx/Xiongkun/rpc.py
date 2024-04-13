@@ -106,7 +106,6 @@ class RPCChannel:
     def delete(self):
         if hasattr(self, "local_server"): 
             os.killpg(self.local_server.pid, signal.SIGKILL)
-
     def __init__(self, name, remote_server, type, function, noblock=0, creator=None, packer=None):
         config = {
             'mode': 'nl',
@@ -120,6 +119,7 @@ class RPCChannel:
             port = self.creator.port()
             print ("Creating server : ", self.creator.cmd())
             remote_server = f"127.0.0.1:{port}"
+            config['waittime'] = 1000
             start_server_cmd = self.creator.cmd()
             self.local_server = subprocess.Popen([start_server_cmd], shell=True, universal_newlines=False, close_fds=True, preexec_fn=os.setsid)
             config['waittime'] = 1000
@@ -134,7 +134,10 @@ class RPCChannel:
         vimcommand(
             f'let {self.channel_name} = ch_open("{self.job_name}", {dict2str(config)})'
         )
-        time.sleep(0.1)
+        status = vimeval(f'ch_status({self.channel_name})')
+        if status != "open": 
+            print ("Failed to connect to server.")
+            vimcommand(f'ch_close({self.channel_name})')
 
         vimcommand(
             f'call ch_sendraw({self.channel_name}, "{type}\n")'

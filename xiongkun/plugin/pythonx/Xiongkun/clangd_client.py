@@ -449,7 +449,7 @@ def goto_definition(args):
     if args[0] == 'def': 
         lsp_server().call("goto", handle, cur_file, "definition", position)
     elif args[0] == 'ref': 
-        lsp_server().call("goto", handle, cur_file, "implementation", position)
+        lsp_server().call("goto", handle, cur_file, "reference", position)
 
 
 def ultisnip_complete_items():
@@ -536,6 +536,10 @@ def complete_snippet_only(args):
 @vim_register(name="GoToDefinition", command="Def")
 def py_goto_definition(args):
     goto_definition(['def'])
+
+@vim_register(name="GoToReference", command="Ref")
+def py_goto_reference(args):
+    goto_definition(['ref'])
 
 @vim_register(name="Py_did_change")
 def did_change(args):
