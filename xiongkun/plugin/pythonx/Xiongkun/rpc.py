@@ -108,6 +108,13 @@ class RPCChannel:
             os.killpg(self.local_server.pid, signal.SIGKILL)
 
     def __init__(self, name, remote_server, type, function, noblock=0, creator=None, packer=None):
+        config = {
+            'mode': 'nl',
+            'callback': f'{name}Server',
+            'drop': 'auto',
+            'noblock': noblock,
+            'waittime': -1,
+        }
         if remote_server is None: 
             self.creator = py_server_local_creator if creator is None else creator
             port = self.creator.port()
@@ -115,6 +122,7 @@ class RPCChannel:
             remote_server = f"127.0.0.1:{port}"
             start_server_cmd = self.creator.cmd()
             self.local_server = subprocess.Popen([start_server_cmd], shell=True, universal_newlines=False, close_fds=True, preexec_fn=os.setsid)
+            config['waittime'] = 1000
 
         self.channel_name = f"g:{name}_channel"
         self.receive_name = f"g:{name}_receive"
@@ -122,13 +130,6 @@ class RPCChannel:
         self.packer = PyPackProtocal() if packer is None else packer
         self.func_name = function
         create_rpc_handle(name, self.func_name, self.receive_name)
-        config = {
-            'mode': 'nl',
-            'callback': f'{name}Server',
-            'drop': 'auto',
-            'noblock': noblock,
-            'waittime': 3000,
-        }
         self.job_name = remote_server
         vimcommand(
             f'let {self.channel_name} = ch_open("{self.job_name}", {dict2str(config)})'
