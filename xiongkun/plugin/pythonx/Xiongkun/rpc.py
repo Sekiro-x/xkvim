@@ -5,7 +5,7 @@ import time
 from contextlib import contextmanager
 import ctypes
 import inspect
-from .log import log
+from .log import log, debug
 import multiprocessing
 import vim
 from .vim_utils import *
@@ -25,6 +25,13 @@ def create_rpc_handle(name, function_name, receive_name):
     endfunction
     """)
 
+    vim.command(f"""
+    function! {name}ServerGetId(msg)
+        let {receive_name}=a:msg
+        return py3eval("{function_name}.getId()")
+    endfunction
+    """)
+
     vim.command(f"""function! {name}SendMessageSync(id, channel, package)
         call ch_sendraw(a:channel, a:package)
         let receive_jsons = []
@@ -40,7 +47,8 @@ def create_rpc_handle(name, function_name, receive_name):
                 continue
             endif
             let json = json_decode(out)
-            if json[0] == a:id
+            let cur_id = {name}ServerGetId(out)
+            if cur_id == a:id
                 call {name}Server(a:channel, out)
                 break
             else
@@ -97,6 +105,7 @@ class PyPackProtocal:
         escaped = escape(json.dumps(package), '\\')
         escaped = escape(escaped, '"')
         str_package = '"' + escaped + '\n"'
+        #debug("PyPackProtocal pack: ", str_package)
         return str_package
         
     def unpack(self, strs):
@@ -119,7 +128,6 @@ class RPCChannel:
             port = self.creator.port()
             print ("Creating server : ", self.creator.cmd())
             remote_server = f"127.0.0.1:{port}"
-            config['waittime'] = 1000
             start_server_cmd = self.creator.cmd()
             self.local_server = subprocess.Popen([start_server_cmd], shell=True, universal_newlines=False, close_fds=True, preexec_fn=os.setsid)
             config['waittime'] = 1000
@@ -139,8 +147,9 @@ class RPCChannel:
             print ("Failed to connect to server.")
             vimcommand(f'ch_close({self.channel_name})')
 
-        vimcommand(
-            f'call ch_sendraw({self.channel_name}, "{type}\n")'
+        if type: 
+            vimcommand(
+                f'call ch_sendraw({self.channel_name}, "{type}\n")'
         )
         # package is like: [serve_id, server_name, [arg0, arg1, ...]]
         # respond is like: [serve_id, is_finished, return_val]
@@ -153,7 +162,13 @@ class RPCChannel:
         if not msg: return
         self.on_receive(msg)
 
+    def getId(self):
+        msg = vimeval(f"{self.receive_name}")
+        id, is_finished, output = self.packer.unpack(msg)
+        return int(id)
+
     def on_receive(self, msg):
+        debug("XKXKXK:", "on_receive.", msg)
         id, is_finished, output = self.packer.unpack(msg)
         if id not in self.callbacks: 
             # maybe keeplive package.
@@ -171,6 +186,7 @@ class RPCChannel:
             vim.eval(f'ch_sendraw({self.channel_name}, {str_package})')
         else: 
             assert isinstance(sync, int)
+            debug("Start wait for id: ", sync)
             return vim.eval(f'{self.name}SendMessageSync({sync}, {self.channel_name}, {str_package})')
 
     def stream_new(self, id=None):
@@ -206,7 +222,7 @@ def dummy_callback(*args, **kwargs):
 
 class RPCServer:
     def __init__(self, name="RPC", remote_server=None, type="vimrpc", function="Xiongkun.rpc_server()", creator=None, packer=None):
-        self.channel = RPCChannel(name, remote_server, type, function, 0, creator, packer=None)
+        self.channel = RPCChannel(name, remote_server, type, function, 0, creator, packer=packer)
 
     def call(self, name, on_return, *args):
         stream = self.channel.stream_new()
@@ -223,7 +239,7 @@ class RPCServer:
         stream = self.channel.stream_new()
         stream.register_hook(dummy_callback)
         output = stream.send(name, stream.id, *args)
-        id, is_finished, output = json.loads(output)
+        id, is_finished, output = self.channel.packer.unpack(output)
         return output
 
     def call_stream(self, name, on_return, on_finish, *args): 
@@ -246,6 +262,9 @@ class RPCServer:
     def receive(self): # for hooker.
         self.channel.receive()
 
+    def getId(self): # for hooker.
+        return self.channel.getId()
+
     def keeplive(self):
         self.channel.send([-1, "keeplive", []])
 
@@ -255,9 +274,9 @@ commands("""
 augroup LocalServerDelete
     autocmd!
     autocmd VimLeave * py3 Xiongkun.local_rpc.channel.delete()
+    autocmd VimLeave * py3 Xiongkun.HaskellServer().channel.delete()
 augroup END
 """)
-    #autocmd VimLeave * py3 Xiongkun.HaskellServer().channel.delete()
 
 @contextmanager  
 def LocalServerContextManager():  

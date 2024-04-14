@@ -18,10 +18,25 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy.Char8 as C8
 import Data.Aeson
 import Data.Text (pack)
+import Debug.Trace (trace)
+import qualified Data.Aeson.KeyMap
+import Data.Scientific (toBoundedInteger)
 
-data RpcRespond = RpcRespond Value String
+data RpcRespond = RpcRespond Int Value String
 instance ToJSON RpcRespond where
-  toJSON (RpcRespond res status) = object ["res" .= res, "status" .= (String $ pack status)] 
+  toJSON (RpcRespond id res status) = object ["id" .= id, "res" .= res, "status" .= (String $ pack status)] 
+
+hasKeyId :: Value -> Bool
+hasKeyId (Object o) = (trace (show o)) isJust $ Data.Aeson.KeyMap.lookup "id" o
+hasKeyId _ = False
+
+toNumber :: Value -> Maybe Int
+toNumber (Number n) = toBoundedInteger n
+
+getId :: Value -> Int
+getId (Object o) = fromJust $ toNumber (fromJust $ Data.Aeson.KeyMap.lookup "id" o)
+getId _ = error "bugs!"
+
 
 rpcHandle :: Socket -> SelectMonad ()
 rpcHandle sock = do 
@@ -30,22 +45,24 @@ rpcHandle sock = do
       then closeHandle sock
       else do
         let json_str = C8.pack oneLine
-        let maybe_json = decode json_str :: Maybe Value
-        if isNothing maybe_json 
+        let maybe_json = decode (trace ("[Receive Message] " ++ oneLine) json_str) :: Maybe Value
+        if isNothing maybe_json || not (hasKeyId $ fromJust maybe_json)
           then lift $ putStrLn $ "Decode Error!: " ++ oneLine
           else do
+            let id = getId $ fromJust maybe_json
             let respond = processHandle $ fromJust maybe_json
-            {-lift . putStrLn . show $ respond -}
-            rpcResponse sock respond
+            lift . putStrLn . show $ respond
+            rpcResponse sock id respond
 
 rpcWrite :: Socket -> RpcRespond -> SelectMonad ()
-rpcWrite s rsp = (lift $ writeBlock s $ show $ encode rsp) >> return ()
+rpcWrite s rsp = (lift $ writeBlock s $ trace ("[Send Message] " ++ msg) msg) >> return ()
+    where msg = (show  (encode rsp)) ++ "\n" :: String
 
-rpcResponse :: Socket -> Either String Value -> SelectMonad ()
-rpcResponse sock (Left status) = do
-    rpcWrite sock $ RpcRespond (String $ pack status) "error"
-rpcResponse sock (Right v) = do 
-    rpcWrite sock $ RpcRespond v "success"
+rpcResponse :: Socket -> Int -> Either String Value -> SelectMonad ()
+rpcResponse sock id (Left status) = do
+    rpcWrite sock $ RpcRespond id (String $ pack status) "error"
+rpcResponse sock id (Right v) = do 
+    rpcWrite sock $ RpcRespond id v "success"
 
 listenHandle :: Socket -> SelectMonad ()
 listenHandle sock = do

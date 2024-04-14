@@ -1,12 +1,13 @@
 target: Main.hs RegisterHandle.hs
 	ghc --make -XTemplateHaskell Main.hs -o main -ddump-splices # -ddump-to-file
 
-requirement: 
+requirement: makefile
 	cabal install --lib HTTP
 	cabal install --lib select
 	cabal install --lib aeson
 	cabal install --lib network
 	cabal install --lib vector
+	cabal install --lib scientific
 
 clean: 
 	rm -f main

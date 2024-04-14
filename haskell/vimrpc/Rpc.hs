@@ -14,6 +14,9 @@ $(autoGenDataType "hi" [])
 $(autoGenDataType "echo" [''String])
 $(autoGenDataType "add1" [''Int])
 
+type ListInt = [Int]
+$(autoGenDataType "sum" [''ListInt])
+
 add :: (Num a) => a -> a -> a
 add x y = x + y
 
@@ -36,4 +39,10 @@ $(createProcesser "processHandle" [
         , ("hi", 'hi, 0)
         , ("echo", 'echo, 1)
         , ("add1", 'addOne, 1)
+        , ("sum", 'sum, 1)
     ])
+
+-- TODO: 
+-- 1. monad to store global value.
+-- 2. transfer more function into haskell rpc server.
+

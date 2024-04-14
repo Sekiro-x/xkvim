@@ -15,6 +15,7 @@ def log(*args): # 0
         with open(f"{HOME_PREFIX}/vim_log.txt", "a") as fp :
             fp.writelines([out])
             fp.write("\n")
+            fp.flush()
 
 def debug(*args): # 1
     if level > 1: return
@@ -23,6 +24,7 @@ def debug(*args): # 1
         with open(f"{HOME_PREFIX}/vim_log.txt", "a") as fp :
             fp.writelines([out])
             fp.write("\n")
+            fp.flush()
 
 def log_google(*args):
     with mutex:
