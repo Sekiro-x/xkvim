@@ -6,6 +6,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy.Char8 as C8
 import Data.Maybe
 import Data.Text
+import DotGraph (generateDotGraph)
 
 $(autoGenDataType "Path" [''String])
 $(autoGenDataType "IntAdd" [''Int, ''Int])
@@ -13,6 +14,7 @@ $(autoGenDataType "Concat" [''String, ''String])
 $(autoGenDataType "hi" [])
 $(autoGenDataType "echo" [''String])
 $(autoGenDataType "add1" [''Int])
+$(autoGenDataType "dotGraph" [''Text])
 
 type ListInt = [Int]
 $(autoGenDataType "sum" [''ListInt])
@@ -40,6 +42,7 @@ $(createProcesser "processHandle" [
         , ("echo", 'echo, 1)
         , ("add1", 'addOne, 1)
         , ("sum", 'sum, 1)
+        , ("dotGraph", 'generateDotGraph, 1)
     ])
 
 -- TODO: 

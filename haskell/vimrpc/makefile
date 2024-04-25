@@ -7,6 +7,7 @@ requirement: makefile
 	cabal install --lib aeson
 	cabal install --lib network
 	cabal install --lib vector
+	cabal install --lib split
 	cabal install --lib scientific
 
 clean: 

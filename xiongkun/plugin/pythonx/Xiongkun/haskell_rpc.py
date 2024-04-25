@@ -57,3 +57,14 @@ haskell_server = HaskellServer()
 def TestHaskell(args):
     #print(HaskellServer().call_sync("Concat", "xxx", "yyy"))
     print(HaskellServer().call_sync("sum", [12, 12, 12, 12, 12, 12]))
+
+@vim_register(command="DrawGraph")
+def DrawGraph(args):
+    lines = GetVisualWords()
+    graph = HaskellServer().call_sync("dotGraph", lines)
+    file = tempfile()
+    with open(file, "w") as fp :
+        fp.write(graph)
+    print (f"Write to {file}")
+    print (f"use this to install dot command: sudo apt install graphviz")
+    print (f"use this to get png:             dot {file} -Tpng -o /home/data/output.png")
