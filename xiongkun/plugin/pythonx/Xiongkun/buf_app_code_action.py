@@ -109,7 +109,7 @@ def ChangeDirectoryCommand(args):
     print (f"Changing directory: {directory_path}")
     vim.command(f"FR {directory_path}")
     vim.command(f"ChangeSearchDirectory {directory_path}")
-    remote_project.change_directory(directory_path)
+    if remote_project: remote_project.change_directory(directory_path)
     FileSystem().remount()
 
 last_searched_directory = ""
