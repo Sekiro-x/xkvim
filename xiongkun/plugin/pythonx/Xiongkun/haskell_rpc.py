@@ -61,6 +61,7 @@ def TestHaskell(args):
 @vim_register(command="DrawGraph")
 def DrawGraph(args):
     lines = GetVisualWords()
+    lines = lines.replace("0x", "node_")
     graph = HaskellServer().call_sync("dotGraph", lines)
     file = tempfile()
     with open(file, "w") as fp :
