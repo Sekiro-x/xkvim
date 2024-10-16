@@ -17,7 +17,7 @@ __yiyan_server = None
 def yiyan_server():
     global __yiyan_server
     if __yiyan_server is None: 
-        __yiyan_server = RPCServer("Yiyan", None, "yiyan", function="Xiongkun.yiyan_server()")
+        __yiyan_server = RPCServer("Yiyan", "host.docker.internal:8888", "yiyan", function="Xiongkun.yiyan_server()")
     return __yiyan_server
 
 class YiyanResponsePostProcessor:

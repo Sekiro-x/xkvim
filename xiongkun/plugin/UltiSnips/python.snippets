@@ -1622,3 +1622,48 @@ out = func(x)
 print (out)
 
 endsnippet
+snippet flags_cinn "no description"
+import os
+os.environ['FLAGS_cinn_new_group_scheduler'] = '1'                                                                                                                                                                  
+os.environ['FLAGS_group_schedule_tiling_first'] = '1'                                                                                                                                                                  
+os.environ['FLAGS_prim_all'] = 'true'                                                                                                                                                                               
+os.environ['FLAGS_prim_enable_dynamic'] = 'true'                                                                                                                                                                               
+os.environ['FLAGS_print_ir'] = '1'
+os.environ['FLAGS_enable_pir_api'] = '1'                                                                                                                                                                            
+os.environ['FLAGS_use_cinn'] = '1'                                                                                                                                                                                  
+os.environ['FLAGS_cinn_bucket_compile'] = '1'                                                                                                                                                                                  
+os.environ['FLAGS_cinn_new_cluster_op_method'] = '1'
+os.environ['FLAGS_deny_cinn_ops'] = 'slice;'
+
+endsnippet
+snippet example_paddle_static "no description"
+import paddle
+def network():
+    x = paddle.static.data('x', [256, 128], dtype='float32')
+    x = paddle.nn.Linear(128, 128)(x)
+    y = paddle.nn.functional.softmax(x)
+    loss = y.mean()
+    paddle.optimizer.SGD(learning_rate=0.1).minimize(loss)
+    return loss
+
+def test_recompute():
+    x_data = paddle.randn([256, 128], dtype='float32').numpy()
+    paddle.enable_static()
+    loss = network()
+    breakpoint() 
+    print("Main Program:", paddle.static.default_main_program())
+    exe = paddle.static.Executor()
+    exe.run(paddle.static.default_startup_program())
+    out = exe.run(paddle.static.default_main_program(), feed={'x': x_data}, fetch_list=[loss])
+    print (out)
+
+if __name__ == '__main__':
+    test_recompute()
+
+endsnippet
+snippet paddle_event "no description"
+paddle.core.nvprof_nvtx_push(str("train_" + str(to_static) + "_" + str(with_prim) + "_" + str(with_cinn) + str(i)))
+forward()
+paddle.core.nvprof_nvtx_pop()
+
+endsnippet
